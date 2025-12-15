@@ -3,7 +3,7 @@ from pynote.themes import LIGHT_THEME, DARK_THEME
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-
+from pynote.ui import show_about
 APP_TITLE = "PyNote"
 
 
@@ -56,6 +56,9 @@ class PyNoteApp(tk.Tk):
         filemenu.add_command(label='Exit', command=self.quit)
 
         self.menu.add_cascade(label='File', menu=filemenu)
+        helpmenu = tk.Menu(self.menu, tearoff=0)
+        helpmenu.add_command(label='About', command=lambda: show_about(self))
+        self.menu.add_cascade(label='Help', menu=helpmenu)
         self.config(menu=self.menu)
 
     def toggle_theme(self):

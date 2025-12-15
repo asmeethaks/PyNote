@@ -1,6 +1,6 @@
 # src/pynote/main.py
 from pynote.themes import LIGHT_THEME, DARK_THEME
-
+from pynote.utils import load_settings, save_settings
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -10,19 +10,24 @@ APP_TITLE = "PyNote"
 class PyNoteApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.current_theme = "light"
+        self.settings = load_settings()
+        self.current_theme = self.settings.get("theme", "light")
         self.title(APP_TITLE)
-        self.geometry('800x600')
+        self.geometry(self.settings.get("window_geometry", "800x600"))
         self._filepath = None
         self._create_widgets()
         self._create_menu()
         self._bind_shortcuts()
-        self._load_theme()
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
 
         if self.current_theme == "dark":
             self.apply_theme(DARK_THEME)
         else:
             self.apply_theme(LIGHT_THEME)
+    def on_close(self):
+        self.settings["window_geometry"] = self.geometry()
+        save_settings(self.settings)
+        self.destroy()
 
     def _create_widgets(self):
         # Text widget with scrollbar
@@ -53,7 +58,7 @@ class PyNoteApp(tk.Tk):
         filemenu.add_separator()
         filemenu.add_command(label='Toggle Dark Mode', command=self.toggle_theme)
         filemenu.add_separator()
-        filemenu.add_command(label='Exit', command=self.quit)
+        filemenu.add_command(label='Exit', command=self.on_close)
 
         self.menu.add_cascade(label='File', menu=filemenu)
         self.config(menu=self.menu)
@@ -66,7 +71,8 @@ class PyNoteApp(tk.Tk):
             self.apply_theme(LIGHT_THEME)
             self.current_theme = "light"
 
-        self._save_theme()
+        self.settings["theme"] = self.current_theme
+        save_settings(self.settings)
 
     def apply_theme(self, theme):
         self.configure(bg=theme["bg"])
@@ -77,17 +83,6 @@ class PyNoteApp(tk.Tk):
             selectbackground=theme["select_bg"],
             selectforeground=theme["select_fg"]
         )
-
-    def _save_theme(self):
-        with open("theme.txt", "w") as f:
-            f.write(self.current_theme)
-
-    def _load_theme(self):
-        try:
-            with open("theme.txt", "r") as f:
-                self.current_theme = f.read().strip()
-        except:
-            self.current_theme = "light"
 
 
 
@@ -118,6 +113,12 @@ class PyNoteApp(tk.Tk):
                 self.text.insert('1.0', data)
                 self._filepath = path
                 self.title(f"{APP_TITLE} - {path}")
+                recent = self.settings.get("recent_files", [])
+                if path not in recent:
+                    recent.insert(0, path)
+                self.settings["recent_files"] = recent[:5]
+                save_settings(self.settings)
+
             except Exception as e:
                 messagebox.showerror('Error', f'Failed to open file: {str(e)}')
 

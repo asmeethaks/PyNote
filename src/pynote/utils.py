@@ -34,6 +34,7 @@ def load_settings():
     config_file = get_config_dir() / 'settings.json'
     default_settings = {
         'theme': 'light',
+        'window_geometry': '800x600'
         'autosave': False,
         'autosave_interval': 300,  # seconds
         'tab_size': 4,

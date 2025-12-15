@@ -1,4 +1,6 @@
 # src/pynote/main.py
+from pynote.themes import LIGHT_THEME, DARK_THEME
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -8,12 +10,19 @@ APP_TITLE = "PyNote"
 class PyNoteApp(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.current_theme = "light"
         self.title(APP_TITLE)
         self.geometry('800x600')
         self._filepath = None
         self._create_widgets()
         self._create_menu()
         self._bind_shortcuts()
+        self._load_theme()
+
+        if self.current_theme == "dark":
+            self.apply_theme(DARK_THEME)
+        else:
+            self.apply_theme(LIGHT_THEME)
 
     def _create_widgets(self):
         # Text widget with scrollbar
@@ -34,16 +43,53 @@ class PyNoteApp(tk.Tk):
         self.text.bind('<ButtonRelease>', self._update_status)
 
     def _create_menu(self):
-        menu = tk.Menu(self)
-        filemenu = tk.Menu(menu, tearoff=0)
+        self.menu = tk.Menu(self)
+
+        filemenu = tk.Menu(self.menu, tearoff=0)
         filemenu.add_command(label='New', command=self.new_file)
         filemenu.add_command(label='Open', command=self.open_file)
         filemenu.add_command(label='Save', command=self.save_file)
         filemenu.add_command(label='Save As', command=self.save_as)
         filemenu.add_separator()
+        filemenu.add_command(label='Toggle Dark Mode', command=self.toggle_theme)
+        filemenu.add_separator()
         filemenu.add_command(label='Exit', command=self.quit)
-        menu.add_cascade(label='File', menu=filemenu)
-        self.config(menu=menu)
+
+        self.menu.add_cascade(label='File', menu=filemenu)
+        self.config(menu=self.menu)
+
+    def toggle_theme(self):
+        if self.current_theme == "light":
+            self.apply_theme(DARK_THEME)
+            self.current_theme = "dark"
+        else:
+            self.apply_theme(LIGHT_THEME)
+            self.current_theme = "light"
+
+        self._save_theme()
+
+    def apply_theme(self, theme):
+        self.configure(bg=theme["bg"])
+        self.text.configure(
+            bg=theme["bg"],
+            fg=theme["fg"],
+            insertbackground=theme["insert_bg"],
+            selectbackground=theme["select_bg"],
+            selectforeground=theme["select_fg"]
+        )
+
+    def _save_theme(self):
+        with open("theme.txt", "w") as f:
+            f.write(self.current_theme)
+
+    def _load_theme(self):
+        try:
+            with open("theme.txt", "r") as f:
+                self.current_theme = f.read().strip()
+        except:
+            self.current_theme = "light"
+
+
 
     def _bind_shortcuts(self):
         self.bind('<Control-s>', lambda e: self.save_file())

@@ -3,7 +3,7 @@ from pynote.themes import LIGHT_THEME, DARK_THEME
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-
+from pynote.ui import GoToLineDialog
 APP_TITLE = "PyNote"
 
 
@@ -97,6 +97,17 @@ class PyNoteApp(tk.Tk):
         self.bind('<Control-n>', lambda e: self.new_file())
         self.bind('<Control-z>', lambda e: self.text.event_generate('<<Undo>>'))
         self.bind('<Control-y>', lambda e: self.text.event_generate('<<Redo>>'))
+        self.bind('<Control-g>', lambda e: self.go_to_line())
+        self.bind('<Control-G>', lambda e: self.go_to_line())
+    def go_to_line(self):
+        total_lines = int(self.text.index('end-1c').split('.')[0])
+        dialog = GoToLineDialog(self, total_lines)
+        self.wait_window(dialog.dialog)
+        if dialog.result:
+            line = dialog.result
+            self.text.mark_set("insert", f"{line}.0")
+            self.text.see(f"{line}.0")
+            self._update_status()
 
     def new_file(self):
         if self._confirm_discard():

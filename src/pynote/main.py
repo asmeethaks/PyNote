@@ -42,6 +42,20 @@ class PyNoteApp(tk.Tk):
         self.text.bind('<KeyRelease>', self._update_status)
         self.text.bind('<ButtonRelease>', self._update_status)
 
+    def show_shortcuts(self):
+        shortcuts = (
+            "File:\n"
+            "  Ctrl+n → new file\n"
+            "  Ctrl+o  → open file\n"
+            "  Ctrl+s  → savefile\n"
+            "Edit:\n"
+            "  Ctrl+z → undo\n"
+            "  Ctrl+y  → redo\n"
+            "View:\n"
+            "  Ctrl+d  → toggling dark mode\n"
+        )
+        messagebox.showinfo("Keyboard Shortcuts", shortcuts)
+
     def _create_menu(self):
         self.menu = tk.Menu(self)
 
@@ -56,6 +70,10 @@ class PyNoteApp(tk.Tk):
         filemenu.add_command(label='Exit', command=self.quit)
 
         self.menu.add_cascade(label='File', menu=filemenu)
+        helpmenu = tk.Menu(self.menu, tearoff=0)
+        helpmenu.add_command(label="Keyboard Shortcuts", command=self.show_shortcuts)
+        self.menu.add_cascade(label="Help", menu=helpmenu)
+
         self.config(menu=self.menu)
 
     def toggle_theme(self):

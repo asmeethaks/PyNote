@@ -5,6 +5,22 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 APP_TITLE = "PyNote"
+class LineNumbers(tk.Canvas):
+    def __init__(self, parent, text_widget):
+        super().__init__(parent, width=40, bg="#f0f0f0", highlightthickness=0)
+        self.text_widget = text_widget
+
+    def redraw(self):
+        self.delete("all")
+        i = self.text_widget.index("@0,0")
+        while True:
+            dline = self.text_widget.dlineinfo(i)
+            if dline is None:
+                break
+            y = dline[1]
+            line_number = str(i).split(".")[0]
+            self.create_text(35, y, anchor="ne", text=line_number)
+            i = self.text_widget.index(f"{i}+1line")
 
 
 class PyNoteApp(tk.Tk):
@@ -24,13 +40,31 @@ class PyNoteApp(tk.Tk):
         else:
             self.apply_theme(LIGHT_THEME)
 
+    def _on_textscroll(self, *args):
+        self.vsb.set(*args)
+        self.linenumbers.redraw()
+    def _on_text_modified(self, event=None):
+        self.text.edit_modified(False)
+        self.linenumbers.redraw()
+
     def _create_widgets(self):
-        # Text widget with scrollbar
-        self.text = tk.Text(self, wrap='word', undo=True)
-        self.vsb = ttk.Scrollbar(self, orient='vertical', command=self.text.yview)
-        self.text.configure(yscrollcommand=self.vsb.set)
-        self.vsb.pack(side='right', fill='y')
-        self.text.pack(side='left', fill='both', expand=True)
+        # Editor frame (for line numbers + text + scrollbar)
+        editor_frame = tk.Frame(self)
+        editor_frame.pack(fill="both", expand=True)
+
+        self.text = tk.Text(editor_frame, wrap='word', undo=True)
+        self.linenumbers = LineNumbers(editor_frame, self.text)
+
+        self.vsb = ttk.Scrollbar(editor_frame, orient='vertical', command=self.text.yview)
+        self.text.configure(yscrollcommand=self._on_textscroll)
+
+        self.linenumbers.pack(side="left", fill="y")
+        self.text.pack(side="left", fill="both", expand=True)
+        self.vsb.pack(side="right", fill="y")
+
+        self.text.bind("<KeyRelease>", lambda e: self.linenumbers.redraw())
+        self.text.bind("<Configure>", lambda e: self.linenumbers.redraw())
+        self.text.bind("<<Modified>>", self._on_text_modified)
 
         # status bar
         self.status = tk.StringVar()
@@ -41,6 +75,7 @@ class PyNoteApp(tk.Tk):
         # update cursor position
         self.text.bind('<KeyRelease>', self._update_status)
         self.text.bind('<ButtonRelease>', self._update_status)
+        self.linenumbers.redraw()
 
     def _create_menu(self):
         self.menu = tk.Menu(self)
@@ -120,6 +155,7 @@ class PyNoteApp(tk.Tk):
                 self.title(f"{APP_TITLE} - {path}")
             except Exception as e:
                 messagebox.showerror('Error', f'Failed to open file: {str(e)}')
+        self.linenumbers.redraw()
 
     def save_file(self):
         if self._filepath:
